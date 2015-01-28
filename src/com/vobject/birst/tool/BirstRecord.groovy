@@ -4,11 +4,14 @@
 package com.vobject.birst.tool
 
 import groovy.transform.ToString
+import groovy.transform.Sortable
 /**
  * @author limcheek
  *
  */
 
+// REF: http://mrhaki.blogspot.com/2014/05/groovy-goodness-use-sortable-annotation.html
+@Sortable(includes = ['salesOrderNumber', 'serialNumber'])
 @ToString
 class BirstRecord {
 	String serialNumber
