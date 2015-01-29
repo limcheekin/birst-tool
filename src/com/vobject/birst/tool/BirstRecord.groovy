@@ -33,4 +33,8 @@ class BirstRecord {
 	String type
 	String warrantyType
 	String entitlementId
+	Boolean isSalesOrderNumberFound
+	Boolean isSerialNumberFound
+	Boolean isPartIdNotFound
+	
 }

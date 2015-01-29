@@ -26,7 +26,7 @@ Random rand = new Random()
 
 def birstRecords = []
 
-new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst Excel File", labels:true]) {
+new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 	//systemSerialNumber, certificateSerialNumber, PONumber, salesOrderNum, partID, partDescription, originalShipDate, startDate, endDate, contractSAPID, reseller, endUser, endUserStandardName, endUserState, soldTo, billTo, shipTo, type, warrantyType, entitlementId
 	birstRecords << new BirstRecord (
 	  serialNumber: systemSerialNumber ? systemSerialNumber.trim() : certificateSerialNumber.trim(),
@@ -53,6 +53,37 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst Excel File", labels:tru
 
 birstRecords.sort()
 
-birstRecords.eachWithIndex { o, i -> 
-	println "$i) $o"
-}
+
+	matchSalesOrderNumbers(birstRecords)
+
+	birstRecords.eachWithIndex { o, i ->
+	 println "$i) $o"
+	}
+
+	def matchSalesOrderNumbers (List birstRecords) {
+		List SSI_SALES_STAGES = ['Quote Request', 'Not Connected']
+		Long salesOrderNumber
+		List salesOrderNumbers = []
+		
+		new ExcelBuilder("InputFile.xls").eachLine([sheet:"CRM", labels:true]) {
+			//println "$SSISalesStage ${SSI_SALES_STAGES.contains(SSISalesStage)}"
+			if (SSI_SALES_STAGES.contains(SSISalesStage)) {
+				for (number in opportunityID.findAll( /\d+/ )) {
+					if (number.length() == 7) {
+						salesOrderNumber = number as Long
+						if (!salesOrderNumbers.contains(salesOrderNumber))
+							salesOrderNumbers << salesOrderNumber
+						break
+					}
+				}
+			}
+		}
+		
+		// println salesOrderNumbers
+		
+		salesOrderNumbers.each { salesOrderNum ->
+			birstRecords.each {
+				if (it.salesOrderNumber == salesOrderNum) it.isSalesOrderNumberFound = true
+			}
+		}
+	}
