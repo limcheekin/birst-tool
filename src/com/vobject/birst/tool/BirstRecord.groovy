@@ -21,7 +21,7 @@ class BirstRecord {
 	String partDescription
 	Date originalShipDate
 	Date startDate
-	Date endtDate
+	Date endDate
 	String contractSapId
 	String reseller
 	String endUser
@@ -35,6 +35,7 @@ class BirstRecord {
 	String entitlementId
 	Boolean isSalesOrderNumberFound
 	Boolean isSerialNumberFound
-	Boolean isPartIdNotFound
+	Boolean isPartIdFound
+	WebSafeColors duplicateSerialNumberColor
 	
 }
