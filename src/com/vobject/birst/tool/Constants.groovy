@@ -1,7 +1,5 @@
 package com.vobject.birst.tool
 
-import java.util.Date;
-
 class Constants {
 	// Used for Excel sheet generation
 	final static WebSafeColors SALES_ORDER_NUMBER_MATCHED_COLOR = WebSafeColors._FFFF00 // Yellow

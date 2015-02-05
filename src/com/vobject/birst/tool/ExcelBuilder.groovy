@@ -12,11 +12,11 @@ package com.vobject.birst.tool
  * @author limcheek
  *
  */
-import org.apache.poi.hssf.usermodel.HSSFWorkbook
-import org.apache.poi.hssf.usermodel.HSSFSheet
-import org.apache.poi.hssf.usermodel.HSSFRow
-import org.apache.poi.hssf.usermodel.HSSFCell
-import org.apache.poi.hssf.usermodel.HSSFDateUtil
+import org.apache.poi.xssf.usermodel.XSSFCell
+import org.apache.poi.xssf.usermodel.XSSFRow
+import org.apache.poi.xssf.usermodel.XSSFSheet
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.apache.poi.ss.usermodel.DateUtil
  
 class ExcelBuilder {
  
@@ -25,21 +25,21 @@ class ExcelBuilder {
     def row
  
     ExcelBuilder(String fileName) {
-        HSSFRow.metaClass.getAt = {int idx ->
+        XSSFRow.metaClass.getAt = {int idx ->
             def cell = delegate.getCell(idx)
             if(! cell) {
                 return null
             }
             def value
             switch(cell.cellType) {
-                case HSSFCell.CELL_TYPE_NUMERIC:
-                if(HSSFDateUtil.isCellDateFormatted(cell)) {
+                case XSSFCell.CELL_TYPE_NUMERIC:
+                if(DateUtil.isCellDateFormatted(cell)) {
                     value = cell.dateCellValue
                 } else {
                     value = cell.numericCellValue
                 }
                 break
-                case HSSFCell.CELL_TYPE_BOOLEAN:
+                case XSSFCell.CELL_TYPE_BOOLEAN:
                 value = cell.booleanCellValue
                 break
                 default:
@@ -50,7 +50,7 @@ class ExcelBuilder {
         }
  
         new File(fileName).withInputStream{is->
-            workbook = new HSSFWorkbook(is)
+            workbook = new XSSFWorkbook(is)
         }
     }
  

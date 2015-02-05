@@ -3,15 +3,14 @@
  */
 package com.vobject.birst.tool
 
-import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellStyle
 import org.apache.poi.ss.usermodel.Font
-import org.apache.poi.ss.usermodel.IndexedColors
-import org.apache.poi.ss.usermodel.Row
-import org.apache.poi.ss.usermodel.Sheet
-import org.apache.poi.ss.usermodel.Workbook
+import org.apache.poi.xssf.usermodel.XSSFCell
+import org.apache.poi.xssf.usermodel.XSSFCellStyle
 import org.apache.poi.xssf.usermodel.XSSFColor
 import org.apache.poi.xssf.usermodel.XSSFRichTextString
+import org.apache.poi.xssf.usermodel.XSSFRow
+import org.apache.poi.xssf.usermodel.XSSFSheet
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 /**
@@ -21,7 +20,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 def birstRecords = []
 
-new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
+new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Birst", labels:true]) {
 	//systemSerialNumber, certificateSerialNumber, PONumber, salesOrderNum, partID, partDescription, originalShipDate, startDate, endDate, contractSAPID, reseller, endUser, endUserStandardName, endUserState, soldTo, billTo, shipTo, type, warrantyType, entitlementId
 	birstRecords << new BirstRecord (
 	  serialNumber: systemSerialNumber ? systemSerialNumber.trim() : certificateSerialNumber.trim(),
@@ -44,6 +43,7 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 	  warrantyType: warrantyType.trim(),
 	  entitlementId: entitlementId.trim()
 	)
+	
 }
 
 	birstRecords.sort()
@@ -63,7 +63,7 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 		Long salesOrderNumber
 		List salesOrderNumbers = []
 		
-		new ExcelBuilder("InputFile.xls").eachLine([sheet:"CRM", labels:true]) {
+		new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"CRM", labels:true]) {
 			//println "$SSISalesStage ${SSI_SALES_STAGES.contains(SSISalesStage)}"
 			if (SSI_SALES_STAGES.contains(SSISalesStage)) {
 				// REF: http://stackoverflow.com/questions/15572481/extract-numeric-data-from-string-in-groovy
@@ -89,7 +89,7 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 	
 	def matchSerialNumbers (List birstRecords) {
 		String serialNum
-		new ExcelBuilder("InputFile.xls").eachLine([sheet:"CRM Booking Package", labels:true]) {
+		new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"CRM Booking Package", labels:true]) {
 			serialNum = serialNumber.trim()
 			birstRecords.each {
 				if (it.serialNumber == serialNum) it.isSerialNumberFound = true
@@ -100,7 +100,7 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 	def matchPartIDs (List birstRecords) {
 		List partIDs = []
 		
-		new ExcelBuilder("InputFile.xls").eachLine([sheet:"Price List", labels:true]) {
+		new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Price List", labels:true]) {
 			if (arubaCareSKU.trim()) {
 				partIDs << arubaCareSKU.trim()
 			}
@@ -116,7 +116,7 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 		}
 	}
 	
-	def checkDuplicateSerialNumbers (birstRecords) {
+	def checkDuplicateSerialNumbers (List birstRecords) {
 		WebSafeColors duplicateColor
 		Integer size = birstRecords.size()
 		int k = 0
@@ -144,11 +144,11 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 		}
 	}
 	
-	def generateOutputFile (birstRecords) {
-		Cell cell
-		Row row
-		Workbook wb = new XSSFWorkbook()
-		Sheet sheet = wb.createSheet("Birst")
+	def generateOutputFile (List birstRecords) {
+		XSSFCell cell
+		XSSFRow row
+		XSSFWorkbook wb = new XSSFWorkbook()
+		XSSFSheet sheet = wb.createSheet("Birst")
 		XSSFRichTextString richText
 		
 		Font font = wb.createFont()
@@ -168,8 +168,12 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 			partIdNotExistsStyle.setFillPattern(CellStyle.SOLID_FOREGROUND)
 			CellStyle duplicateSerialNumberStyle
 			
+			// REF: http://stackoverflow.com/questions/5794659/poi-how-do-i-set-cell-value-to-date-and-apply-default-excel-date-format
+			XSSFCellStyle dateCellStyle = wb.createCellStyle()
+			dateCellStyle.dataFormat = wb.getCreationHelper().createDataFormat().getFormat("m/d/yy")
+			
 			// Create a row and put some cells in it. Rows are 0 based.
-			Row header = sheet.createRow(0)
+			XSSFRow header = sheet.createRow(0)
 			Constants.OUTPUT_COLUMNS.eachWithIndex { name, i ->
 				cell = header.createCell(i)
 				richText = new XSSFRichTextString(NameUtils.getNaturalName(name))
@@ -213,13 +217,16 @@ new ExcelBuilder("InputFile.xls").eachLine([sheet:"Birst", labels:true]) {
 					cell.setCellValue(new XSSFRichTextString(partDescription))
 
 					cell = row.createCell(6)
-					cell.setCellValue(new XSSFRichTextString(originalShipDate as String))
+					cell.setCellValue(originalShipDate)
+					cell.cellStyle = dateCellStyle
 					
 					cell = row.createCell(7)
-					cell.setCellValue(new XSSFRichTextString(startDate as String))
+					cell.setCellValue(startDate)
+					cell.cellStyle = dateCellStyle
 
 					cell = row.createCell(8)
-					cell.setCellValue(new XSSFRichTextString(endDate as String))
+					cell.setCellValue(endDate)
+					cell.cellStyle = dateCellStyle
 					
 					cell = row.createCell(9)
 					cell.setCellValue(new XSSFRichTextString(contractSapId))
