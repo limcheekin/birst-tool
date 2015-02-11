@@ -16,7 +16,7 @@ import groovy.transform.Sortable
 class BirstRecord {
 	String serialNumber
 	String purchaseOrderNumber
-	Long salesOrderNumber
+	String salesOrderNumber
 	String partId
 	String partDescription
 	Date originalShipDate

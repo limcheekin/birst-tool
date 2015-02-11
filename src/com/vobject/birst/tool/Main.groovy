@@ -26,7 +26,7 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 	birstRecords << new BirstRecord (
 	  serialNumber: systemSerialNumber ? systemSerialNumber.trim() : certificateSerialNumber ? certificateSerialNumber.trim() : Constants.EMPTY_STRING,
 	  purchaseOrderNumber: PONumber ? PONumber.trim() : Constants.EMPTY_STRING,
-	  salesOrderNumber: salesOrderNum as Long,
+	  salesOrderNumber: salesOrderNum ? salesOrderNum.trim() : Constants.EMPTY_STRING,
 	  partId: partID ? partID.trim() : Constants.EMPTY_STRING,
 	  partDescription: partDescription ? partDescription.trim() : Constants.EMPTY_STRING,
 	  originalShipDate: originalShipDate ? originalShipDate as Date : null,
@@ -61,7 +61,6 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 
 	def matchSalesOrderNumbers (List birstRecords) {
 		List SSI_SALES_STAGES = ['Quote Request', 'Not Contacted']
-		Long salesOrderNumber
 		List salesOrderNumbers = []
 		
 		new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"CRM", labels:true]) {
@@ -70,9 +69,8 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 				// REF: http://stackoverflow.com/questions/15572481/extract-numeric-data-from-string-in-groovy
 				for (number in opportunityID.findAll( /\d+/ )) {
 					if (number.length() == 7) {
-						salesOrderNumber = number as Long
-						if (!salesOrderNumbers.contains(salesOrderNumber))
-							salesOrderNumbers << salesOrderNumber
+						if (!salesOrderNumbers.contains(number))
+							salesOrderNumbers << number
 						break
 					}
 				}
@@ -132,7 +130,7 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 				if (birstRecords[i].serialNumber && birstRecords[j].serialNumber) { 
 					//println "${++k} i) $i ${birstRecords[i].serialNumber}, j) $j ${birstRecords[j].serialNumber}"
 					if (birstRecords[i].serialNumber == birstRecords[j].serialNumber) {
-						println "DUPLICATE i) $i ${birstRecords[i].salesOrderNumber} ${birstRecords[i].serialNumber}, j) $j ${birstRecords[j].salesOrderNumber} ${birstRecords[j].serialNumber}"
+						//println "DUPLICATE i) $i ${birstRecords[i].salesOrderNumber} ${birstRecords[i].serialNumber}, j) $j ${birstRecords[j].salesOrderNumber} ${birstRecords[j].serialNumber}"
 						if (lastSerialNumber != birstRecords[i].serialNumber) {
 							lastSerialNumber = birstRecords[i].serialNumber
 							duplicateColor = Constants.DUPLICATE_SERIAL_NUMBER_COLORS[rand.nextInt(max)]
@@ -151,6 +149,15 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 		XSSFWorkbook wb = new XSSFWorkbook()
 		XSSFSheet sheet = wb.createSheet("Birst")
 		XSSFRichTextString richText
+		// To calculate column width
+		Integer partDescriptionMaxSize = 0
+		Integer resellerMaxSize = 0
+		Integer endUserMaxSize = 0
+		Integer endUserStandardNameMaxSize = 0
+		Integer soldToMaxSize = 0
+		Integer billToMaxSize = 0
+		Integer shipToMaxSize = 0
+		
 		
 		Font font = wb.createFont()
 		font.bold = true
@@ -180,8 +187,12 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 				richText = new XSSFRichTextString(NameUtils.getNaturalName(name))
 				richText.applyFont(font)
 				cell.setCellValue(richText)
+				// REF: http://stackoverflow.com/questions/20190317/apache-poi-excel-big-auto-column-width
+				sheet.autoSizeColumn(i);
 			}
-			
+			for(int colNum = 0; colNum< header.getLastCellNum();colNum++)
+				wb.getSheetAt(0).autoSizeColumn(colNum);
+			print "\nGenerating Output File"
 			birstRecords.eachWithIndex { birstRecord, i ->
 				row  = sheet.createRow(i + 1)
 				birstRecord.with {
@@ -216,6 +227,7 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 
 					cell = row.createCell(5)
 					cell.setCellValue(new XSSFRichTextString(partDescription))
+					if (partDescriptionMaxSize < partDescription.length()) partDescriptionMaxSize = partDescription.length() 
 
 					cell = row.createCell(6)
 					if (originalShipDate) {
@@ -240,24 +252,30 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 
 					cell = row.createCell(10)
 					cell.setCellValue(new XSSFRichTextString(reseller))
+					if (resellerMaxSize < reseller.length()) resellerMaxSize = reseller.length()
 					
 					cell = row.createCell(11)
 					cell.setCellValue(new XSSFRichTextString(endUser))
+					if (endUserMaxSize < endUser.length()) endUserMaxSize = endUser.length()
 					
 					cell = row.createCell(12)
 					cell.setCellValue(new XSSFRichTextString(endUserStandardName))
+					if (endUserStandardNameMaxSize < endUserStandardName.length()) endUserStandardNameMaxSize = endUserStandardName.length()
 
 					cell = row.createCell(13)
 					cell.setCellValue(new XSSFRichTextString(endUserState))
 					
 					cell = row.createCell(14)
 					cell.setCellValue(new XSSFRichTextString(soldTo))
+					if (soldToMaxSize < soldTo.length()) soldToMaxSize = soldTo.length()
 					
 					cell = row.createCell(15)
 					cell.setCellValue(new XSSFRichTextString(billTo))
+					if (billToMaxSize < billTo.length()) billToMaxSize = billTo.length()
 					
 					cell = row.createCell(16)
 					cell.setCellValue(new XSSFRichTextString(shipTo))
+					if (shipToMaxSize < shipTo.length()) shipToMaxSize = shipTo.length()
 					
 					cell = row.createCell(17)
 					cell.setCellValue(new XSSFRichTextString(type))
@@ -268,13 +286,45 @@ new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) 
 					cell = row.createCell(19)
 					cell.setCellValue(new XSSFRichTextString(entitlementId))
 				}
-				// REF: http://stackoverflow.com/questions/20190317/apache-poi-excel-big-auto-column-width
-				for(int colNum = 0; colNum<row.getLastCellNum();colNum++)
-					wb.getSheetAt(0).autoSizeColumn(colNum);
+					
+				print "."	
 			}
 		}
+		
+		// REF: http://stackoverflow.com/questions/18983203/how-to-speed-up-autosizing-columns-in-apache-poi
+		sheet.setColumnWidth(1, Constants.STANDARD_MAX_SIZE * Constants.SINGLE_CHARACTER_SIZE)
+		sheet.setColumnWidth(2, Constants.STANDARD_MAX_SIZE * Constants.SINGLE_CHARACTER_SIZE)
+		sheet.setColumnWidth(4, Constants.STANDARD_MAX_SIZE * Constants.SINGLE_CHARACTER_SIZE)
+		
+		if (sheet.getColumnWidth(5) < partDescriptionMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			sheet.setColumnWidth(5, partDescriptionMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			
+		sheet.setColumnWidth(7, Constants.DATE_MAX_SIZE * Constants.SINGLE_CHARACTER_SIZE)
+		sheet.setColumnWidth(8, Constants.DATE_MAX_SIZE * Constants.SINGLE_CHARACTER_SIZE)
+		
+		if (sheet.getColumnWidth(10) < resellerMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			sheet.setColumnWidth(10, resellerMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+		
+		if (sheet.getColumnWidth(11) < endUserMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			sheet.setColumnWidth(11, endUserMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+		
+		if (sheet.getColumnWidth(12) < endUserStandardNameMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			sheet.setColumnWidth(12, endUserStandardNameMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+		
+		if (sheet.getColumnWidth(14) < soldToMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			sheet.setColumnWidth(14, soldToMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+		
+		if (sheet.getColumnWidth(15) < billToMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			sheet.setColumnWidth(15, billToMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+		
+		if (sheet.getColumnWidth(16) < shipToMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			sheet.setColumnWidth(16, shipToMaxSize * Constants.SINGLE_CHARACTER_SIZE)
+			
+		sheet.setColumnWidth(17, Constants.STANDARD_MAX_SIZE * Constants.SINGLE_CHARACTER_SIZE)
+		sheet.setColumnWidth(19, Constants.STANDARD_MAX_SIZE * Constants.SINGLE_CHARACTER_SIZE)
 		
 		FileOutputStream fileOut = new FileOutputStream("Output.xlsx")
 		wb.write(fileOut)
 		fileOut.close()
+		println "\n\nOutput.xlsx generated."
 	}

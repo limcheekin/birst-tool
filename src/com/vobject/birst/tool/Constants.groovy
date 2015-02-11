@@ -32,4 +32,9 @@ class Constants {
 										'entitlementId']			
 	
 	final static String EMPTY_STRING = ""
+	
+	// REF: http://stackoverflow.com/questions/18983203/how-to-speed-up-autosizing-columns-in-apache-poi
+	final static Integer SINGLE_CHARACTER_SIZE = 1.14388 * 256 as Integer
+	final static Integer STANDARD_MAX_SIZE = 20
+	final static Integer DATE_MAX_SIZE = 12
 }

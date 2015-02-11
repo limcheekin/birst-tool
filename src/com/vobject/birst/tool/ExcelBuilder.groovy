@@ -91,6 +91,10 @@ class ExcelBuilder {
         def offset = params.offset ?: 0
         def max = params.max ?: 9999999
         def sheet = getSheet(params.sheet)
+		if (!sheet) {
+			println "Sheet '${params.sheet}' not found!"
+			return
+		}
         def rowIterator = sheet.rowIterator()
         def linesRead = 0
  
