@@ -29,5 +29,7 @@ class Constants {
 										'shipTo',
 										'type',
 										'warrantyType',
-										'entitlementId']														  
+										'entitlementId']			
+	
+	final static String EMPTY_STRING = ""
 }

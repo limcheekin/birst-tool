@@ -24,7 +24,7 @@ class ExcelBuilder {
     def labels
     def row
  
-    ExcelBuilder(String fileName) {
+    ExcelBuilder(String fileName, Boolean numericToString) {
         XSSFRow.metaClass.getAt = {int idx ->
             def cell = delegate.getCell(idx)
             if(! cell) {
@@ -35,8 +35,13 @@ class ExcelBuilder {
                 case XSSFCell.CELL_TYPE_NUMERIC:
                 if(DateUtil.isCellDateFormatted(cell)) {
                     value = cell.dateCellValue
-                } else {
-                    value = cell.numericCellValue
+                } else { 
+					if (numericToString) { // convert numeric value to String
+						cell.cellType = XSSFCell.CELL_TYPE_STRING
+						value = cell.stringCellValue
+					} else {
+						value = cell.numericCellValue
+					}
                 }
                 break
                 case XSSFCell.CELL_TYPE_BOOLEAN:
@@ -53,6 +58,10 @@ class ExcelBuilder {
             workbook = new XSSFWorkbook(is)
         }
     }
+	
+	ExcelBuilder(String fileName) {
+		this(fileName, false)
+	}
  
     def getSheet(idx) {
         def sheet

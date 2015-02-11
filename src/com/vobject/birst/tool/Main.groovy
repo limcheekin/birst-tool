@@ -20,28 +20,29 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 def birstRecords = []
 
-new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Birst", labels:true]) {
+new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Birst", labels:true]) {
 	//systemSerialNumber, certificateSerialNumber, PONumber, salesOrderNum, partID, partDescription, originalShipDate, startDate, endDate, contractSAPID, reseller, endUser, endUserStandardName, endUserState, soldTo, billTo, shipTo, type, warrantyType, entitlementId
+	//println "${systemSerialNumber ? systemSerialNumber.trim() : certificateSerialNumber ? certificateSerialNumber.trim() : Constants.EMPTY_STRING}) ${PONumber} ${contractSAPID}"
 	birstRecords << new BirstRecord (
-	  serialNumber: systemSerialNumber ? systemSerialNumber.trim() : certificateSerialNumber.trim(),
-	  purchaseOrderNumber: PONumber.trim(),
+	  serialNumber: systemSerialNumber ? systemSerialNumber.trim() : certificateSerialNumber ? certificateSerialNumber.trim() : Constants.EMPTY_STRING,
+	  purchaseOrderNumber: PONumber ? PONumber.trim() : Constants.EMPTY_STRING,
 	  salesOrderNumber: salesOrderNum as Long,
-	  partId: partID.trim(),
-	  partDescription: partDescription.trim(),
+	  partId: partID ? partID.trim() : Constants.EMPTY_STRING,
+	  partDescription: partDescription ? partDescription.trim() : Constants.EMPTY_STRING,
 	  originalShipDate: originalShipDate ? originalShipDate as Date : null,
 	  startDate: startDate ? startDate as Date : null,
 	  endDate: endDate ? endDate as Date : null,
-	  contractSapId: contractSAPID.trim(),
-	  reseller: reseller.trim(),
-	  endUser: endUser.trim(),
-	  endUserStandardName: endUserStandardName.trim(),
-	  endUserState: endUserState.trim(),
-	  soldTo: soldTo.trim(),
-	  billTo: billTo.trim(),
-	  shipTo: shipTo.trim(),
-	  type: type.trim(),
-	  warrantyType: warrantyType.trim(),
-	  entitlementId: entitlementId.trim()
+	  contractSapId: contractSAPID ? contractSAPID.trim() : Constants.EMPTY_STRING,
+	  reseller: reseller ? reseller.trim() : Constants.EMPTY_STRING,
+	  endUser: endUser ? endUser.trim() : Constants.EMPTY_STRING,
+	  endUserStandardName: endUserStandardName ? endUserStandardName.trim() : Constants.EMPTY_STRING,
+	  endUserState: endUserState ? endUserState.trim() : Constants.EMPTY_STRING,
+	  soldTo: soldTo ? soldTo.trim() : Constants.EMPTY_STRING,
+	  billTo: billTo ? billTo.trim() : Constants.EMPTY_STRING,
+	  shipTo: shipTo ? shipTo.trim() : Constants.EMPTY_STRING,
+	  type: type ? type.trim() : Constants.EMPTY_STRING,
+	  warrantyType: warrantyType ? warrantyType.trim() : Constants.EMPTY_STRING,
+	  entitlementId: entitlementId ? entitlementId.trim() : Constants.EMPTY_STRING
 	)
 	
 }
@@ -55,11 +56,11 @@ new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Birst", labels:true]) {
 	generateOutputFile(birstRecords)
 
 	/*birstRecords.eachWithIndex { o, i ->
-	 println "$i) $o"
+	  println "$i) ${o.purchaseOrderNumber} ${o.contractSapId}"
 	}*/
 
 	def matchSalesOrderNumbers (List birstRecords) {
-		List SSI_SALES_STAGES = ['Quote Request', 'Not Connected']
+		List SSI_SALES_STAGES = ['Quote Request', 'Not Contacted']
 		Long salesOrderNumber
 		List salesOrderNumbers = []
 		
@@ -100,8 +101,8 @@ new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Birst", labels:true]) {
 	def matchPartIDs (List birstRecords) {
 		List partIDs = []
 		
-		new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Price List", labels:true]) {
-			if (arubaCareSKU.trim()) {
+		new ExcelBuilder("InputFile.xlsx", true).eachLine([sheet:"Price List", labels:true]) {
+			if (arubaCareSKU) {
 				partIDs << arubaCareSKU.trim()
 			}
 		}
@@ -129,7 +130,7 @@ new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Birst", labels:true]) {
 		for (int i = 0; i < size; i++) {
 			for (int j = i + 1; j < size; j++) {
 				if (birstRecords[i].serialNumber && birstRecords[j].serialNumber) { 
-					println "${++k} i) $i ${birstRecords[i].serialNumber}, j) $j ${birstRecords[j].serialNumber}"
+					//println "${++k} i) $i ${birstRecords[i].serialNumber}, j) $j ${birstRecords[j].serialNumber}"
 					if (birstRecords[i].serialNumber == birstRecords[j].serialNumber) {
 						println "DUPLICATE i) $i ${birstRecords[i].salesOrderNumber} ${birstRecords[i].serialNumber}, j) $j ${birstRecords[j].salesOrderNumber} ${birstRecords[j].serialNumber}"
 						if (lastSerialNumber != birstRecords[i].serialNumber) {
@@ -217,16 +218,22 @@ new ExcelBuilder("InputFile.xlsx").eachLine([sheet:"Birst", labels:true]) {
 					cell.setCellValue(new XSSFRichTextString(partDescription))
 
 					cell = row.createCell(6)
-					cell.setCellValue(originalShipDate)
-					cell.cellStyle = dateCellStyle
+					if (originalShipDate) {
+						cell.setCellValue(originalShipDate)
+						cell.cellStyle = dateCellStyle
+					}
 					
 					cell = row.createCell(7)
-					cell.setCellValue(startDate)
-					cell.cellStyle = dateCellStyle
+					if (startDate) {
+						cell.setCellValue(startDate)
+						cell.cellStyle = dateCellStyle
+					}
 
 					cell = row.createCell(8)
-					cell.setCellValue(endDate)
-					cell.cellStyle = dateCellStyle
+					if (endDate) {
+						cell.setCellValue(endDate)
+						cell.cellStyle = dateCellStyle
+					}
 					
 					cell = row.createCell(9)
 					cell.setCellValue(new XSSFRichTextString(contractSapId))
